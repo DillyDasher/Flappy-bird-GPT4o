@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Flappy Bird Clone</title>
+  <style>
+    body { margin: 0; overflow: hidden; background: #70c5ce; }
+    canvas { display: block; background: #70c5ce; }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+  <script>
+    (function() {
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      window.addEventListener("resize", resizeCanvas);
+      resizeCanvas();
+
+      const birdImage = new Image();
+      birdImage.src = "https://upload.wikimedia.org/wikipedia/commons/4/45/American_Goldfinch_male_in_summer.jpg"; 
+
+      let bird, pipes, frameCount, score, gameOver;
+      const gravity = 0.5, jumpStrength = -10, pipeWidth = 60, pipeGap = 150, pipeSpeed = 3, pipeInterval = 90;
+
+      function init() {
+        bird = { x: canvas.width / 4, y: canvas.height / 2, width: 50, height: 50, velocity: 0 };
+        pipes = [];
+        frameCount = 0;
+        score = 0;
+        gameOver = false;
+      }
+
+      function update() {
+        if (gameOver) return;
+        frameCount++;
+
+        bird.velocity += gravity;
+        bird.y += bird.velocity;
+
+        if (frameCount % pipeInterval === 0) {
+          const topPipeHeight = Math.random() * (canvas.height - pipeGap - 100) + 50;
+          pipes.push({ x: canvas.width, topHeight: topPipeHeight, bottomY: topPipeHeight + pipeGap });
+        }
+
+        for (let i = pipes.length - 1; i >= 0; i--) {
+          let pipe = pipes[i];
+          pipe.x -= pipeSpeed;
+
+          if (pipe.x + pipeWidth < bird.x && !pipe.scored) {
+            score++;
+            pipe.scored = true;
+          }
+
+          if (pipe.x + pipeWidth < 0) {
+            pipes.splice(i, 1);
+          }
+        }
+
+        if (bird.y + bird.height > canvas.height || bird.y < 0) {
+          gameOver = true;
+        }
+
+        for (let pipe of pipes) {
+          if (rectIntersect(bird.x, bird.y, bird.width, bird.height, pipe.x, 0, pipeWidth, pipe.topHeight) ||
+              rectIntersect(bird.x, bird.y, bird.width, bird.height, pipe.x, pipe.bottomY, pipeWidth, canvas.height - pipe.bottomY)) {
+            gameOver = true;
+          }
+        }
+      }
+
+      function rectIntersect(x1, y1, w1, h1, x2, y2, w2, h2) {
+        return !(x2 > x1 + w1 || x2 + w2 < x1 || y2 > y1 + h1 || y2 + h2 < y1);
+      }
+
+      function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.drawImage(birdImage, bird.x, bird.y, bird.width, bird.height);
+
+        ctx.fillStyle = "#4CAF50";
+        pipes.forEach(pipe => {
+          ctx.fillRect(pipe.x, 0, pipeWidth, pipe.topHeight);
+          ctx.fillRect(pipe.x, pipe.bottomY, pipeWidth, canvas.height - pipe.bottomY);
+        });
+
+        ctx.fillStyle = "#fff";
+        ctx.font = "30px sans-serif";
+        ctx.fillText("Score: " + score, 10, 40);
+
+        if (gameOver) {
+          ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = "#fff";
+          ctx.font = "48px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText("Game Over", canvas.width / 2, canvas.height / 2 - 20);
+          ctx.font = "24px sans-serif";
+          ctx.fillText("Tap to Restart", canvas.width / 2, canvas.height / 2 + 20);
+        }
+      }
+
+      function gameLoop() {
+        update();
+        render();
+        requestAnimationFrame(gameLoop);
+      }
+
+      function jump() {
+        if (gameOver) {
+          init();
+        } else {
+          bird.velocity = jumpStrength;
+        }
+      }
+
+      canvas.addEventListener("touchstart", function(e) { e.preventDefault(); jump(); });
+      canvas.addEventListener("mousedown", function(e) { e.preventDefault(); jump(); });
+
+      birdImage.onload = function() {
+        init();
+        gameLoop();
+      };
+    })();
+  </script>
+</body>
+</html>
