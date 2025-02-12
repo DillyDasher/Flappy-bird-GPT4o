@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <!-- Ensures proper scaling on mobile devices -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Funst Mobile HTML Game</title>
+  <style>
+    /* Reset and base styles */
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      font-family: Arial, sans-serif;
+      background: #222;
+      color: #fff;
+    }
+    /* Each “screen” covers the full viewport and is positioned absolutely */
+    .screen {
+      display: none;
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    /* The active screen is visible */
+    .active {
+      display: block;
+    }
+    /* Center content vertically and horizontally */
+    .centered {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      text-align: center;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+    /* A basic style for buttons */
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(45deg, #ff6b6b, #f06595);
+      color: #fff;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    button:hover {
+      transform: scale(1.05);
+    }
+    /* Menu container style */
+    .menu {
+      background: rgba(0, 0, 0, 0.8);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+    }
+    h1 {
+      font-size: 48px;
+      margin-bottom: 20px;
+    }
+    /* Currency display style */
+    .currency {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    /* Style for shop items */
+    .shop-item {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px;
+      margin: 10px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 80%;
+    }
+    /* Fancy animated gradient background for the main menu */
+    #mainMenu {
+      background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+      background-size: 400% 400%;
+      animation: gradientBackground 15s ease infinite;
+    }
+    @keyframes gradientBackground {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Main Menu Screen -->
+  <div id="mainMenu" class="screen active centered">
+    <div class="menu">
+      <h1>Funst Game</h1>
+      <button id="startGameBtn">Start Game</button>
+      <button id="shopBtn">Shop</button>
+      <button id="inventoryBtn">Inventory</button>
+      <button id="settingsBtn">Settings</button>
+    </div>
+  </div>
+
+  <!-- Game Screen: Tap to collect coins -->
+  <div id="gameScreen" class="screen centered">
+    <div class="menu">
+      <h1>Collect Coins!</h1>
+      <div class="currency">Money: $<span id="moneyCount">0</span></div>
+      <button id="collectCoinBtn">Tap to Collect Coin</button>
+      <button id="backFromGameBtn">Back to Menu</button>
+    </div>
+  </div>
+
+  <!-- Shop Screen: Buy items -->
+  <div id="shopScreen" class="screen centered">
+    <div class="menu">
+      <h1>Shop</h1>
+      <div class="currency">Money: $<span id="shopMoneyCount">0</span></div>
+      <div id="shopItems">
+        <!-- Shop items will be added here dynamically -->
+      </div>
+      <button id="backFromShopBtn">Back to Menu</button>
+    </div>
+  </div>
+
+  <!-- Inventory Screen: List purchased items -->
+  <div id="inventoryScreen" class="screen centered">
+    <div class="menu">
+      <h1>Inventory</h1>
+      <ul id="inventoryList" style="list-style: none; padding: 0;">
+        <!-- Inventory items will appear here -->
+      </ul>
+      <button id="backFromInventoryBtn">Back to Menu</button>
+    </div>
+  </div>
+
+  <!-- Settings Screen (Placeholder) -->
+  <div id="settingsScreen" class="screen centered">
+    <div class="menu">
+      <h1>Settings</h1>
+      <p>Coming soon!</p>
+      <button id="backFromSettingsBtn">Back to Menu</button>
+    </div>
+  </div>
+
+  <script>
+    // Global game variables
+    let money = 0;
+    let inventory = [];
+    // Define some sample shop items
+    const shopItems = [
+      { id: 1, name: "Magic Sword", cost: 50 },
+      { id: 2, name: "Shield", cost: 30 },
+      { id: 3, name: "Potion", cost: 10 }
+    ];
+
+    // Helper: Switch between screens
+    function showScreen(screenId) {
+      document.querySelectorAll('.screen').forEach(screen => {
+        screen.classList.remove('active');
+      });
+      document.getElementById(screenId).classList.add('active');
+      updateMoneyDisplays();
+    }
+
+    // Update money on all screens
+    function updateMoneyDisplays() {
+      document.getElementById('moneyCount').innerText = money;
+      document.getElementById('shopMoneyCount').innerText = money;
+    }
+
+    // Initialize shop items list
+    function initShop() {
+      const shopContainer = document.getElementById('shopItems');
+      shopContainer.innerHTML = '';
+      shopItems.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'shop-item';
+        div.innerHTML = `<span>${item.name} - $${item.cost}</span>`;
+        const buyBtn = document.createElement('button');
+        buyBtn.innerText = "Buy";
+        buyBtn.onclick = () => {
+          if (money >= item.cost) {
+            money -= item.cost;
+            inventory.push(item.name);
+            alert('You purchased ' + item.name + '!');
+            updateMoneyDisplays();
+            updateInventory();
+          } else {
+            alert('Not enough money!');
+          }
+        };
+        div.appendChild(buyBtn);
+        shopContainer.appendChild(div);
+      });
+    }
+
+    // Update the inventory display
+    function updateInventory() {
+      const inventoryList = document.getElementById('inventoryList');
+      inventoryList.innerHTML = '';
+      if (inventory.length === 0) {
+        const li = document.createElement('li');
+        li.innerText = "Inventory is empty.";
+        inventoryList.appendChild(li);
+      } else {
+        inventory.forEach(item => {
+          const li = document.createElement('li');
+          li.innerText = item;
+          inventoryList.appendChild(li);
+        });
+      }
+    }
+
+    // Main Menu Button Listeners
+    document.getElementById('startGameBtn').addEventListener('click', () => {
+      showScreen('gameScreen');
+    });
+    document.getElementById('shopBtn').addEventListener('click', () => {
+      initShop();
+      showScreen('shopScreen');
+    });
+    document.getElementById('inventoryBtn').addEventListener('click', () => {
+      updateInventory();
+      showScreen('inventoryScreen');
+    });
+    document.getElementById('settingsBtn').addEventListener('click', () => {
+      showScreen('settingsScreen');
+    });
+
+    // Back Buttons
+    document.getElementById('backFromGameBtn').addEventListener('click', () => {
+      showScreen('mainMenu');
+    });
+    document.getElementById('backFromShopBtn').addEventListener('click', () => {
+      showScreen('mainMenu');
+    });
+    document.getElementById('backFromInventoryBtn').addEventListener('click', () => {
+      showScreen('mainMenu');
+    });
+    document.getElementById('backFromSettingsBtn').addEventListener('click', () => {
+      showScreen('mainMenu');
+    });
+
+    // In the game screen, tapping this button collects a random coin amount
+    document.getElementById('collectCoinBtn').addEventListener('click', () => {
+      // Earn between $1 and $10 each tap
+      money += Math.floor(Math.random() * 10) + 1;
+      updateMoneyDisplays();
+    });
+  </script>
+</body>
+</html>
